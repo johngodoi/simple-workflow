@@ -1,0 +1,43 @@
+<workflow-app
+        name="ingestion_wrk"
+        xmlns="uri:oozie:workflow:0.5">
+    <start to="myfirstsparkjob"/>
+
+    <action name="myfirstsparkjob">
+        <spark xmlns="uri:oozie:spark-action:0.1">
+            <job-tracker>yarnRM</job-tracker>
+            <name-node>hdfs://nameservice1</name-node>
+            <master>yarn-cluster</master>
+            <mode>cluster</mode>
+            <name>ingestion</name>
+            <class>analytics.ingestion.Starter</class>
+            <jar>ingestion-0.1-assembly.jar</jar>
+            <spark-opts>--verbose --executor-cores 2 --num-executors 2 --driver-memory 2g --executor-memory 2g</spark-opts>
+            <arg>-environment dev</arg>
+            <arg>-sQLStatement "select * from schema.purchases"</arg>
+            <arg>-redshiftLayer temporarylayer</arg>
+            <arg>-redshiftTable purchases</arg>
+        </spark>
+        <ok to="shell" />
+        <error to="Kill" />
+    </action>
+
+    <action name='shell'>
+        <shell xmlns="uri:oozie:shell-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <exec>echo</exec>
+            <argument>hello</argument>
+            <argument>Faber</argument>
+
+        </shell>
+        <ok to="End" />
+        <error to="Kill" />
+    </action>
+
+    <kill name="Kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+
+    <end name="End"/>
+</workflow-app>
